@@ -1,0 +1,252 @@
+/* ═══════════════════════════════════════════════════════════
+   ReservationsPage — Day-based reservation list
+   ═══════════════════════════════════════════════════════════ */
+
+.reservations-page {
+    padding: 24px 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* ── Page header ── */
+.reservations-page__header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.reservations-page__title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Week header (month title + nav arrows)
+   ═══════════════════════════════════════════════════════════ */
+
+.week-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.week-header__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    min-width: 180px;
+}
+
+.week-header__nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--color-bg-secondary, #f0f2f5);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: background 0.15s;
+}
+
+.week-header__nav:hover {
+    background: var(--color-bg-hover, #e2e5ea);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Week day strip
+   ═══════════════════════════════════════════════════════════ */
+
+.week-strip {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    padding-bottom: 16px;
+}
+
+.week-strip__day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+}
+
+.week-strip__day:hover {
+    background: var(--color-bg-secondary, #f0f2f5);
+}
+
+.week-strip__date {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-text);
+}
+
+.week-strip__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+/* Selected day — orange background */
+.week-strip__day--selected {
+    background: #f97316;
+}
+
+.week-strip__day--selected .week-strip__date,
+.week-strip__day--selected .week-strip__label {
+    color: #fff;
+}
+
+.week-strip__day--selected:hover {
+    background: #ea580c;
+}
+
+/* Today indicator — blue dot */
+.week-strip__day--today::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #006ac1;
+}
+
+/* Weekend text — red */
+.week-strip__day--weekend .week-strip__date,
+.week-strip__day--weekend .week-strip__label {
+    color: #ef4444;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Loading bar
+   ═══════════════════════════════════════════════════════════ */
+
+.loading-bar {
+    height: 2px;
+    background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+    background-size: 200% 100%;
+    animation: loadingSlide 1.2s ease-in-out infinite;
+    border-radius: 1px;
+    margin-bottom: 8px;
+}
+
+@keyframes loadingSlide {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Booking list
+   ═══════════════════════════════════════════════════════════ */
+
+.booking-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.booking-list__empty {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--color-text-secondary, #6b7280);
+    font-size: 1rem;
+}
+
+/* ── Single booking item ── */
+.booking-item {
+    display: flex;
+    align-items: stretch;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    min-height: 60px;
+}
+
+.booking-item:last-child {
+    border-bottom: none;
+}
+
+/* Time column */
+.booking-item__time {
+    width: 90px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    padding-right: 12px;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+/* Colored vertical bar */
+.booking-item__bar {
+    width: 3px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    margin-right: 12px;
+    min-height: 40px;
+}
+
+/* Room + Person */
+.booking-item__info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+}
+
+.booking-item__room {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.booking-item__person {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+    .reservations-page {
+        padding: 16px;
+    }
+
+    .week-strip__date {
+        font-size: 1rem;
+    }
+
+    .booking-item__time {
+        width: 72px;
+        font-size: 0.85rem;
+    }
+}

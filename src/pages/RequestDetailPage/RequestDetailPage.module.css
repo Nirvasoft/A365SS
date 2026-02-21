@@ -1,0 +1,199 @@
+.request-detail {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.request-detail__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-neutral-500);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    text-decoration: none;
+    margin-bottom: var(--space-4);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color var(--transition-fast);
+}
+
+.request-detail__back:hover {
+    color: var(--color-primary-600);
+}
+
+.request-detail__card {
+    background: var(--color-neutral-0);
+    border: 1px solid var(--color-neutral-100);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── Header ── */
+.request-detail__header {
+    padding: var(--space-5) var(--space-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.request-detail__header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.request-detail__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.request-detail__title-group h2 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-neutral-900);
+}
+
+.request-detail__title-group span {
+    font-size: var(--text-sm);
+    color: var(--color-neutral-500);
+}
+
+/* ── Body ── */
+.request-detail__body {
+    padding: var(--space-6);
+}
+
+.request-detail__section {
+    margin-bottom: var(--space-6);
+}
+
+.request-detail__section:last-child {
+    margin-bottom: 0;
+}
+
+.request-detail__section-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-3);
+}
+
+.request-detail__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+}
+
+.request-detail__field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.request-detail__field-label {
+    font-size: var(--text-xs);
+    color: var(--color-neutral-500);
+    font-weight: var(--font-medium);
+}
+
+.request-detail__field-value {
+    font-size: var(--text-sm);
+    color: var(--color-neutral-900);
+    font-weight: var(--font-medium);
+}
+
+.request-detail__field-value--empty {
+    color: var(--color-neutral-400);
+    font-style: italic;
+}
+
+/* ── Approvers list ── */
+.request-detail__approver-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.request-detail__approver-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-neutral-50);
+    border: 1px solid var(--color-neutral-100);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+}
+
+.request-detail__approver-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: var(--font-bold);
+}
+
+/* ── Actions ── */
+.request-detail__actions {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--color-neutral-100);
+    background: var(--color-neutral-50);
+}
+
+/* ── Loading skeleton ── */
+.request-detail__skeleton {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+.request-detail__skeleton-bar {
+    height: 14px;
+    background: var(--color-neutral-100);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+}
+
+@media (max-width: 768px) {
+    .request-detail__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .request-detail__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .request-detail__body {
+        padding: var(--space-4);
+    }
+}

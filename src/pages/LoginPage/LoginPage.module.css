@@ -1,0 +1,189 @@
+.login {
+    min-height: 100vh;
+    display: flex;
+    background: var(--color-neutral-50);
+}
+
+/* ── Left Panel (Decorative) ── */
+.login__hero {
+    flex: 1;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-16);
+    position: relative;
+    overflow: hidden;
+}
+
+.login__hero::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent 70%);
+    top: -100px;
+    right: -200px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.login__hero::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.15), transparent 70%);
+    bottom: -50px;
+    left: -100px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.login__hero-content {
+    z-index: 1;
+    text-align: center;
+    max-width: 440px;
+}
+
+.login__hero-logo {
+    width: 72px;
+    height: 72px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: white;
+    margin: 0 auto var(--space-8);
+}
+
+.login__hero-title {
+    font-size: 2.5rem;
+    font-weight: var(--font-bold);
+    color: white;
+    line-height: var(--leading-tight);
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-4);
+}
+
+.login__hero-subtitle {
+    font-size: var(--text-lg);
+    color: rgba(255, 255, 255, 0.65);
+    line-height: var(--leading-relaxed);
+}
+
+/* ── Right Panel (Form) ── */
+.login__form-panel {
+    width: 520px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-12) var(--space-10);
+}
+
+.login__form-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.login__form-header {
+    margin-bottom: var(--space-8);
+}
+
+.login__form-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-neutral-900);
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-2);
+}
+
+.login__form-desc {
+    font-size: var(--text-sm);
+    color: var(--color-neutral-500);
+}
+
+.login__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* ── Auth Mode Tabs ── */
+.login__tabs {
+    display: flex;
+    background: var(--color-neutral-100);
+    border-radius: var(--radius-lg);
+    padding: 3px;
+    gap: 3px;
+}
+
+.login__tab {
+    flex: 1;
+    padding: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--color-neutral-500);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.login__tab--active {
+    background: var(--color-neutral-0);
+    color: var(--color-neutral-900);
+    box-shadow: var(--shadow-xs);
+}
+
+/* ── Error banner ── */
+.login__error {
+    background: var(--color-danger-50);
+    border: 1px solid var(--color-danger-100);
+    color: var(--color-danger-600);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+}
+
+/* ── OTP input ── */
+.login__otp-row {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-end;
+}
+
+.login__otp-row>div:first-child {
+    flex: 1;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .login__hero {
+        display: none;
+    }
+
+    .login__form-panel {
+        width: 100%;
+        padding: var(--space-6) var(--space-5);
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .login__hero {
+        flex: 0.8;
+        padding: var(--space-8);
+    }
+
+    .login__hero-title {
+        font-size: 2rem;
+    }
+}
