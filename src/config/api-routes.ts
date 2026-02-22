@@ -64,3 +64,4 @@ export const TEAM_LEAVE_SUMMARY = 'api/teams/leaveSummary';
 export const TEAM_EMPLOYEE_RANK = '/api/teams/employee/rank';
 export const USER_PROFILE_BY_ID = 'api/teams/employees/profile';
 export const CALENDAR_VIEW = 'api/checkin/calendarView';
+export const HOLIDAYS = 'api/checkin/holidays';

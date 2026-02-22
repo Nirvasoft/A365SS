@@ -13,6 +13,7 @@ import {
     X,
     Globe,
     Users,
+    CalendarDays,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
 import styles from './AppLayout.module.css';
@@ -24,6 +25,7 @@ const navItems = [
     { path: '/leave', icon: TreePalm, labelKey: 'nav.leave' },
     { path: '/claims', icon: Receipt, labelKey: 'nav.claims' },
     { path: '/leave-summary', icon: Palmtree, labelKey: 'nav.leaveSummary' },
+    { path: '/holidays', icon: CalendarDays, labelKey: 'nav.holidays' },
     { path: '/team', icon: Users, labelKey: 'nav.team' },
 ];
 

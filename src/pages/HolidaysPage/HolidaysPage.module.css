@@ -1,0 +1,419 @@
+/* ═══════════════════════════════════════════════════════════
+   HolidaysPage — CSS Module
+   ═══════════════════════════════════════════════════════════ */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* ══════════════════════════════════
+   Year Selector
+   ══════════════════════════════════ */
+
+.yearSelector {
+    display: flex;
+    gap: 10px;
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.yearSelector::-webkit-scrollbar {
+    display: none;
+}
+
+.yearBtn {
+    flex-shrink: 0;
+    padding: 10px 28px;
+    border-radius: 50px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.5px;
+}
+
+.yearBtn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: #eff6ff;
+    transform: translateY(-1px);
+}
+
+.yearBtnActive {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: white !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    transform: translateY(-1px);
+}
+
+.yearBtnActive:hover {
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+}
+
+/* ══════════════════════════════════
+   Loading Skeleton
+   ══════════════════════════════════ */
+
+.loadingGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-5);
+}
+
+.skeletonCard {
+    height: 320px;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(110deg, #f0f0f0 8%, #f8f8f8 24%, #f0f0f0 40%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ══════════════════════════════════
+   Months Grid — responsive 2-col
+   ══════════════════════════════════ */
+
+.monthsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--space-5);
+}
+
+/* ══════════════════════════════════
+   Month Card
+   ══════════════════════════════════ */
+
+.monthCard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.monthCard:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.monthCardCurrent {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 1px #93c5fd, var(--shadow-sm);
+    background: linear-gradient(180deg, #f0f7ff 0%, var(--surface) 40%);
+}
+
+/* ── Month header ── */
+.monthHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.monthName {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+}
+
+.monthBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+/* ── Weekday header row ── */
+.weekRow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 4px;
+}
+
+.weekDay {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 0;
+}
+
+/* ── Day grid ── */
+.dayGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.dayEmpty {
+    aspect-ratio: 1;
+}
+
+.dayCell {
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: default;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.dayCell:not(:disabled) {
+    cursor: pointer;
+}
+
+.dayNum {
+    line-height: 1;
+    z-index: 1;
+}
+
+/* ── Holiday day ── */
+.dayCellHoliday {
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    font-weight: 700;
+    border: 1.5px solid rgba(37, 99, 235, 0.25);
+}
+
+.dayCellHoliday:hover {
+    background: rgba(37, 99, 235, 0.18);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.holidayDot {
+    position: absolute;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #2563eb;
+}
+
+/* ── Today ── */
+.dayCellToday {
+    box-shadow: inset 0 0 0 2px #93c5fd;
+    color: #1d4ed8;
+    font-weight: 800;
+    background: #dbeafe;
+}
+
+.dayCellToday.dayCellHoliday {
+    box-shadow: inset 0 0 0 2px #2563eb;
+    background: rgba(37, 99, 235, 0.2);
+}
+
+/* ══════════════════════════════════
+   Holiday Detail Modal
+   ══════════════════════════════════ */
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+    animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* Handle bar */
+.modal::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: #d1d5db;
+}
+
+.modalClose {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.modalClose:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: var(--text-primary);
+}
+
+/* ── Detail content inside modal ── */
+.detailContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px 32px;
+    text-align: center;
+}
+
+.detailDateBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 24px;
+}
+
+.detailDayBig {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.detailMonthYear {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.detailWeekday {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.detailName {
+    margin: 0 0 16px;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.detailBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 50px;
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* ══════════════════════════════════
+   Responsive
+   ══════════════════════════════════ */
+
+@media (min-width: 768px) {
+    .modal {
+        border-radius: 24px;
+        margin-bottom: 40px;
+        align-self: center;
+    }
+
+    .modal::before {
+        display: none;
+    }
+
+    .modalOverlay {
+        align-items: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .monthsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .yearBtn {
+        padding: 8px 20px;
+        font-size: 0.85rem;
+    }
+
+    .dayCell {
+        font-size: 0.75rem;
+    }
+}

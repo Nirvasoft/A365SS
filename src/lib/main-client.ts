@@ -26,10 +26,14 @@ mainClient.interceptors.request.use(
         }
 
         // Inject userid & domain into POST body (same as Flutter ApiClient.post)
-        if (config.method === 'post' && config.data) {
-            const body = typeof config.data === 'string'
-                ? JSON.parse(config.data)
-                : config.data;
+        if (config.method === 'post') {
+            let body: Record<string, unknown> = {};
+
+            if (config.data) {
+                body = typeof config.data === 'string'
+                    ? JSON.parse(config.data)
+                    : config.data;
+            }
 
             if (!body.userid && userId) body.userid = userId;
             if (!body.domain && domain) body.domain = domain;

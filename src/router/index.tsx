@@ -16,6 +16,7 @@ import LeavePage from '../pages/LeavePage/LeavePage';
 import TeamPage from '../pages/TeamPage/TeamPage';
 import TeamDetailView from '../pages/TeamPage/TeamDetailView';
 import MemberDetailView from '../pages/TeamPage/MemberDetailView';
+import HolidaysPage from '../pages/HolidaysPage/HolidaysPage';
 
 export const router = createBrowserRouter([
     // ── Guest routes ──
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
                     { path: '/claims/new', element: <NewClaimPage /> },
                     { path: '/claims/:id', element: <ClaimDetailPage /> },
                     { path: '/leave-summary', element: <LeaveSummaryPage /> },
+                    { path: '/holidays', element: <HolidaysPage /> },
                     { path: '/team', element: <TeamPage /> },
                     { path: '/team/view/:teamSyskey', element: <TeamDetailView /> },
                     { path: '/team/member/:memberSyskey', element: <MemberDetailView /> },
