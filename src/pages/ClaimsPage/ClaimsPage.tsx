@@ -8,8 +8,17 @@ import { StatusBadge } from '../../components/ui/Badge/Badge';
 import type { ClaimModel } from '../../types/models';
 import apiClient from '../../lib/api-client';
 import { CLAIM_LIST } from '../../config/api-routes';
+import { displayDate } from '../../lib/date-utils';
 import styles from './ClaimsPage.module.css';
 import '../../styles/pages.css';
+
+/* helper: yyyyMMdd */
+function toApiDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${dd}`;
+}
 
 export default function ClaimsPage() {
     const { t } = useTranslation();
@@ -18,7 +27,16 @@ export default function ClaimsPage() {
     const { data: claims = [], isLoading } = useQuery<ClaimModel[]>({
         queryKey: ['claims'],
         queryFn: async () => {
-            const res = await apiClient.post(CLAIM_LIST, {});
+            // Send date range for current month — same pattern as request list
+            const now = new Date();
+            const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            const toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const res = await apiClient.post(CLAIM_LIST, {
+                fromdate: toApiDate(fromDate),
+                todate: toApiDate(toDate),
+                requesttype: 'claim',
+                status: '',
+            });
             return res.data?.datalist || [];
         },
     });
@@ -27,10 +45,11 @@ export default function ClaimsPage() {
         let total = 0;
         let pending = 0;
         let approved = 0;
-        for (const c of claims) {
+        for (const c of claims as any[]) {
             total += c.amount || 0;
-            if (c.requeststatus === '1') pending++;
-            if (c.requeststatus === '2') approved++;
+            const st = String(c.requeststatus);
+            if (st === '1') pending++;
+            if (st === '2') approved++;
         }
         return { total, pending, approved, count: claims.length };
     }, [claims]);
@@ -108,16 +127,16 @@ export default function ClaimsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {claims.map((claim, i) => (
+                            {(claims as any[]).map((claim, i) => (
                                 <tr key={claim.syskey || i} onClick={() => navigate(`/claims/${claim.syskey}`)}>
                                     <td>{claim.refno || '—'}</td>
-                                    <td>{claim.date || '—'}</td>
+                                    <td>{displayDate(claim.startdate || claim.date) || '—'}</td>
                                     <td>{claim.claimtype || claim.requesttype || '—'}</td>
                                     <td className={styles['claims-table__amount']}>
-                                        {claim.currencytype || ''} {(claim.amount || 0).toLocaleString()}
+                                        {(claim.amount || 0).toLocaleString()}
                                     </td>
                                     <td>
-                                        <StatusBadge status={claim.requeststatus} />
+                                        <StatusBadge status={String(claim.requeststatus)} />
                                     </td>
                                 </tr>
                             ))}

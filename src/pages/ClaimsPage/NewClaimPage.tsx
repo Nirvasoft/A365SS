@@ -12,6 +12,7 @@ import MemberPicker from '../../components/shared/MemberPicker/MemberPicker';
 import type { MemberItem } from '../../components/shared/MemberPicker/MemberPicker';
 import type { TypesModel } from '../../types/models';
 import apiClient from '../../lib/api-client';
+import { formatAmount, unformatAmount } from '../../lib/format-utils';
 import { SAVE_CLAIM, CLAIM_TYPES, CURRENCY_TYPES } from '../../config/api-routes';
 import styles from './ClaimsPage.module.css';
 
@@ -24,7 +25,10 @@ export default function NewClaimPage() {
     const [currency, setCurrency] = useState('');
     const [fromPlace, setFromPlace] = useState('');
     const [toPlace, setToPlace] = useState('');
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    });
     const [remark, setRemark] = useState('');
     const [files, setFiles] = useState<File[]>([]);
     const [approvers, setApprovers] = useState<MemberItem[]>([]);
@@ -33,7 +37,7 @@ export default function NewClaimPage() {
     const { data: claimTypes = [] } = useQuery<TypesModel[]>({
         queryKey: ['claimTypes'],
         queryFn: async () => {
-            const res = await apiClient.post(CLAIM_TYPES, {});
+            const res = await apiClient.get(CLAIM_TYPES);
             return res.data?.datalist || [];
         },
     });
@@ -41,7 +45,7 @@ export default function NewClaimPage() {
     const { data: currencies = [] } = useQuery<TypesModel[]>({
         queryKey: ['currencyTypes'],
         queryFn: async () => {
-            const res = await apiClient.post(CURRENCY_TYPES, {});
+            const res = await apiClient.get(CURRENCY_TYPES);
             return res.data?.datalist || [];
         },
     });
@@ -49,16 +53,46 @@ export default function NewClaimPage() {
     // ── Submit ──
     const submitMutation = useMutation({
         mutationFn: async () => {
-            const payload = {
-                claimtype: claimType,
-                amount: Number(amount) || 0,
-                currencytype: currency,
-                fromPlace,
-                toPlace,
-                date,
-                remark,
-                selectedApprovers: approvers.map((a) => ({ syskey: a.syskey, name: a.name })),
-            };
+            // Convert date from yyyy-mm-dd to yyyymmdd for API
+            const apiDate = date ? date.replace(/-/g, '') : '';
+            const numAmount = Number(unformatAmount(amount)) || 0;
+
+            // Match Flutter ClaimModel.toJson() exactly
+            const payload: Record<string, unknown> = {};
+
+            // addIfNotEmpty fields — only add if non-empty
+            payload.requesttype = 'claim';
+            payload.requeststatus = 1;
+            if (claimType) payload.claimtype = claimType;
+            if (currency) payload.currencytype = currency;
+            if (apiDate) payload.date = apiDate;
+
+            // addIfEmpty fields — always include (empty string or value)
+            payload.remark = remark;
+            payload.fromPlace = fromPlace;
+            payload.toPlace = toPlace;
+            payload.amount = numAmount;
+
+            payload.attachment = [];
+            payload.selectedApprovers = approvers.map((a) => ({
+                syskey: a.syskey,
+                name: a.name,
+                userid: '',
+                profilestatus: 0,
+                profile: '',
+                eid: a.employeeid || '',
+                signedURL: '',
+                status: '4',
+                pickupplace: '',
+                dropoffplace: '',
+                leaveDateRange: '',
+                timeintime: '',
+                timeouttime: '',
+                attendancevalidation: true,
+                timeinoffset: '',
+                timeoutoffset: '',
+            }));
+
             const res = await apiClient.post(SAVE_CLAIM, payload);
             return res.data;
         },
@@ -96,6 +130,7 @@ export default function NewClaimPage() {
                             value={claimType}
                             onChange={(e) => setClaimType(e.target.value)}
                             required
+                            placeholder="Select claim type"
                             options={claimTypes.map((ct) => ({ value: ct.syskey, label: ct.description }))}
                         />
                         <Select
@@ -103,6 +138,7 @@ export default function NewClaimPage() {
                             label={t('claim.currency')}
                             value={currency}
                             onChange={(e) => setCurrency(e.target.value)}
+                            placeholder="Select currency"
                             options={currencies.map((c) => ({ value: c.syskey, label: c.description }))}
                         />
                     </div>
@@ -112,11 +148,12 @@ export default function NewClaimPage() {
                         <Input
                             id="amount"
                             label={t('claim.amount')}
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            type="text"
+                            inputMode="decimal"
+                            value={formatAmount(amount)}
+                            onChange={(e) => setAmount(unformatAmount(e.target.value))}
                             required
-                            placeholder="0.00"
+                            placeholder="0"
                         />
                         <Input
                             id="date"

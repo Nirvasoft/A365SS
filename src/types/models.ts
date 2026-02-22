@@ -218,6 +218,7 @@ export interface TypesModel {
   syskey: string;
   description: string;
   code?: string;
+  maxpeople?: number;
 }
 
 export interface LeaveType {

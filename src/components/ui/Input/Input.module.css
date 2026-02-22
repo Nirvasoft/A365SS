@@ -72,6 +72,12 @@
     min-height: 80px;
 }
 
+/* ── Number/Amount inputs: right-aligned ── */
+.input-group__input[type="number"],
+.input-group__input[inputmode="decimal"] {
+    text-align: right;
+}
+
 /* ── With Icon ── */
 .input-group__wrapper {
     position: relative;

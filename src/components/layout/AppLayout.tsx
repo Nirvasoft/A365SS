@@ -7,6 +7,7 @@ import {
     Calendar,
     Receipt,
     Palmtree,
+    TreePalm,
     LogOut,
     Menu,
     X,
@@ -19,6 +20,7 @@ const navItems = [
     { path: '/requests', icon: ClipboardList, labelKey: 'nav.myRequests' },
     { path: '/approvals', icon: CheckSquare, labelKey: 'nav.approvals' },
     { path: '/reservations', icon: Calendar, labelKey: 'nav.reservations' },
+    { path: '/leave', icon: TreePalm, labelKey: 'nav.leave' },
     { path: '/claims', icon: Receipt, labelKey: 'nav.claims' },
     { path: '/leave-summary', icon: Palmtree, labelKey: 'nav.leaveSummary' },
 ];

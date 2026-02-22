@@ -12,6 +12,7 @@ import ClaimsPage from '../pages/ClaimsPage/ClaimsPage';
 import NewClaimPage from '../pages/ClaimsPage/NewClaimPage';
 import ClaimDetailPage from '../pages/ClaimsPage/ClaimDetailPage';
 import LeaveSummaryPage from '../pages/LeaveSummaryPage/LeaveSummaryPage';
+import LeavePage from '../pages/LeavePage/LeavePage';
 
 export const router = createBrowserRouter([
     // ── Guest routes ──
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
                     { path: '/approvals', element: <ApprovalListPage /> },
                     { path: '/approvals/:id', element: <ApprovalDetailPage /> },
                     { path: '/reservations', element: <ReservationsPage /> },
+                    { path: '/leave', element: <LeavePage /> },
                     { path: '/claims', element: <ClaimsPage /> },
                     { path: '/claims/new', element: <NewClaimPage /> },
                     { path: '/claims/:id', element: <ClaimDetailPage /> },

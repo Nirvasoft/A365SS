@@ -34,8 +34,22 @@ import {
     PROJECT_LIST,
     TRAVEL_TYPE_LIST,
     VEHICLE_USE_LIST,
+    LEAVE_TYPES,
 } from '../../config/api-routes';
+import type { LeaveType } from '../../types/models';
+import { formatAmount, unformatAmount } from '../../lib/format-utils';
 import styles from './NewRequestPage.module.css';
+
+/* ── Date/time default helpers ── */
+function todayStr(): string {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+
+function nowTimeStr(): string {
+    const n = new Date();
+    return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`;
+}
 
 /* ══════════════════════════════════════════════════════════════
    Request Type Definitions
@@ -60,6 +74,20 @@ const REQUEST_TYPE_CONFIGS: RequestTypeConfig[] = [
     { key: 'other', label: 'Other', icon: FileText, color: '#64748b', bgColor: '#f1f5f9' },
 ];
 
+/* ── Calculate leave duration from dates + AM/PM periods ── */
+function calcLeaveDuration(startDate: string, endDate: string, startPeriod: string, endPeriod: string): string {
+    const s = new Date(startDate);
+    const e = endDate ? new Date(endDate) : new Date(startDate);
+    if (isNaN(s.getTime()) || isNaN(e.getTime())) return '';
+    const daysDiff = Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff < 0) return '';
+    // Each date+period = half-day index: AM=0, PM=1
+    // totalHalves counts from start period to end period inclusive
+    const totalHalves = (daysDiff * 2) + (startPeriod === 'PM' ? -1 : 0) + (endPeriod === 'AM' ? 0 : 1) + 1;
+    const dur = totalHalves * 0.5;
+    return dur > 0 ? String(dur) : '0.5';
+}
+
 /* ══════════════════════════════════════════════════════════════
    Component
    ══════════════════════════════════════════════════════════════ */
@@ -73,12 +101,18 @@ export default function NewRequestPage() {
     // ── Request type / subtype ──
     const [selectedType, setSelectedType] = useState(presetType);
     const [subType, setSubType] = useState('');
+    const [leaveType, setLeaveType] = useState('');
+
+    // ── Leave-specific AM/PM & duration ──
+    const [startPeriod, setStartPeriod] = useState('AM');
+    const [endPeriod, setEndPeriod] = useState('AM');
+    const [duration, setDuration] = useState('1');
 
     // ── Core fields ──
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [startDate, setStartDate] = useState(todayStr);
+    const [endDate, setEndDate] = useState(todayStr);
+    const [startTime, setStartTime] = useState(nowTimeStr);
+    const [endTime, setEndTime] = useState(nowTimeStr);
     const [remark, setRemark] = useState('');
 
     // ── Transportation-specific ──
@@ -86,9 +120,9 @@ export default function NewRequestPage() {
     const [dropoffPlace, setDropoffPlace] = useState('');
     const [isGoing, setIsGoing] = useState(true);
     const [isReturn, setIsReturn] = useState(false);
-    const [userLeaveTime, setUserLeaveTime] = useState('');
-    const [arrivalTime, setArrivalTime] = useState('');
-    const [returnTime, setReturnTime] = useState('');
+    const [userLeaveTime, setUserLeaveTime] = useState(nowTimeStr);
+    const [arrivalTime, setArrivalTime] = useState(nowTimeStr);
+    const [returnTime, setReturnTime] = useState(nowTimeStr);
     const [car, setCar] = useState('');
     const [driver, setDriver] = useState('');
 
@@ -104,11 +138,11 @@ export default function NewRequestPage() {
     const [product, setProduct] = useState('');
     const [project, setProject] = useState('');
     const [estimatedBudget, setEstimatedBudget] = useState('');
-    const [departureDate, setDepartureDate] = useState('');
-    const [arrivalDate, setArrivalDate] = useState('');
+    const [departureDate, setDepartureDate] = useState(todayStr);
+    const [arrivalDate, setArrivalDate] = useState(todayStr);
 
     // ── Overtime-specific ──
-    const [otDay, setOtDay] = useState('');
+    const [otDay, setOtDay] = useState(todayStr);
     const [hour, setHour] = useState('');
 
     // ── Cash Advance-specific ──
@@ -128,7 +162,7 @@ export default function NewRequestPage() {
     const { data: requestTypes = [] } = useQuery<TypesModel[]>({
         queryKey: ['requestTypes'],
         queryFn: async () => {
-            const res = await apiClient.post(REQUEST_TYPES, {});
+            const res = await apiClient.get(REQUEST_TYPES);
             return res.data?.datalist || [];
         },
     });
@@ -163,16 +197,29 @@ export default function NewRequestPage() {
     const { data: reservationTypes = [] } = useQuery<TypesModel[]>({
         queryKey: ['reservationTypes'],
         queryFn: async () => {
-            const res = await apiClient.post(RESERVATION_TYPES, {});
+            const res = await apiClient.get(RESERVATION_TYPES);
             return res.data?.datalist || [];
         },
         enabled: selectedType === 'reservation',
     });
 
     const { data: roomTypes = [] } = useQuery<TypesModel[]>({
-        queryKey: ['roomTypes'],
+        queryKey: ['roomTypes', startDate, startTime, endTime],
         queryFn: async () => {
-            const res = await apiClient.post(ROOM_TYPES, {});
+            // Flutter sends date + start/end time so the backend can check availability
+            const apiDate = startDate ? startDate.replace(/-/g, '') : todayStr().replace(/-/g, '');
+            const fmtTime = (t: string) => {
+                if (!t) return '12:00 PM';
+                const [h, m] = t.split(':').map(Number);
+                const suffix = h >= 12 ? 'PM' : 'AM';
+                const h12 = h % 12 || 12;
+                return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${suffix}`;
+            };
+            const res = await apiClient.post(ROOM_TYPES, {
+                date: apiDate,
+                starttime: fmtTime(startTime),
+                endtime: fmtTime(endTime),
+            });
             return res.data?.datalist || [];
         },
         enabled: selectedType === 'reservation',
@@ -214,80 +261,245 @@ export default function NewRequestPage() {
         enabled: selectedType === 'travel',
     });
 
-    // Reset sub-fields when type changes
+    const { data: leaveTypeList = [] } = useQuery<LeaveType[]>({
+        queryKey: ['leaveTypeList'],
+        queryFn: async () => {
+            const res = await apiClient.get(LEAVE_TYPES);
+            return res.data?.datalist || [];
+        },
+        enabled: selectedType === 'leave',
+    });
+
+    // Reset sub-fields when type changes; auto-default subType for leave
     useEffect(() => {
         setSubType('');
-    }, [selectedType]);
+        setLeaveType('');
+        setStartPeriod('AM');
+        setEndPeriod('AM');
+        if (selectedType === 'leave' && requestTypes.length > 0) {
+            const leaveMatch = requestTypes.find(
+                (t) => t.description.trim().toLowerCase() === 'leave'
+            );
+            if (leaveMatch) setSubType(leaveMatch.syskey);
+        }
+    }, [selectedType, requestTypes]);
+
+    // Auto-calculate leave duration when dates or periods change
+    useEffect(() => {
+        if (selectedType === 'leave') {
+            setDuration(calcLeaveDuration(startDate, endDate, startPeriod, endPeriod));
+        }
+    }, [selectedType, startDate, endDate, startPeriod, endPeriod]);
 
     // ── Submit mutation ──
     const submitMutation = useMutation({
         mutationFn: async () => {
-            // Build payload based on selected type
-            const payload: Record<string, unknown> = {
-                requesttype: selectedType,
-                requestsubtype: subType,
-                startdate: startDate,
-                enddate: endDate || startDate,
-                starttime: startTime,
-                endtime: endTime,
-                remark,
-                selectedApprovers: approvers.map((a) => ({ syskey: a.syskey, name: a.name })),
+            /* ── Helper: map UI key → API request type syskey + description ── */
+            const TYPE_DESC_MAP: Record<string, string> = {
+                leave: 'Leave',
+                overtime: 'Overtime',
+                wfh: 'Work From Home',
+                transportation: 'Transportation',
+                reservation: 'Reservation',
+                travel: 'Travel',
+                cashadvance: 'Cash Advance',
+                other: 'General',
+            };
+            const typeDesc = TYPE_DESC_MAP[selectedType] || selectedType;
+
+            // Use cached requestTypes; if empty, fetch them now
+            let types = requestTypes;
+            if (!types.length) {
+                try {
+                    const res = await apiClient.get(REQUEST_TYPES);
+                    types = res.data?.datalist || [];
+                } catch {
+                    types = [];
+                }
+            }
+            const matchedType = types.find(
+                (t: TypesModel) => t.description.trim().toLowerCase() === typeDesc.toLowerCase()
+            );
+            const typeSyskey = matchedType?.syskey || selectedType;
+
+            /* ── Helper: date yyyy-MM-dd → yyyyMMdd ── */
+            const toApiDate = (d: string) => d ? d.replace(/-/g, '') : '';
+
+            /* ── Helper: time HH:mm (24hr) → hh:mm AM/PM ── */
+            const toApi12hTime = (t: string) => {
+                if (!t) return '';
+                const [h, m] = t.split(':').map(Number);
+                const suffix = h >= 12 ? 'PM' : 'AM';
+                const h12 = h % 12 || 12;
+                return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${suffix}`;
             };
 
-            // Type-specific fields
-            if (selectedType === 'leave') {
-                payload.selectedHandovers = handovers.map((h) => ({ syskey: h.syskey, name: h.name }));
-            }
+            /* ── Base payload (matches Flutter RequestModel.toJson) ── */
+            const payload: Record<string, unknown> = {
+                requesttype: typeSyskey,
+                requesttypedesc: typeDesc,
+                requestsubtype: subType,
+                remark,
+                reason: remark || null,
+                description: remark || null,
+                selectedApprovers: approvers.map((a) => ({
+                    syskey: a.syskey,
+                    name: a.name,
+                    userid: '',
+                    profilestatus: 0,
+                    profile: '',
+                    eid: a.employeeid || '',
+                    signedURL: '',
+                    status: '4',
+                    pickupplace: '',
+                    dropoffplace: '',
+                    leaveDateRange: '',
+                    timeintime: '',
+                    timeouttime: '',
+                    attendancevalidation: true,
+                    timeinoffset: '',
+                    timeoutoffset: '',
+                })),
+                selectedHandovers: [],
+                attachment: [],
+            };
 
-            if (selectedType === 'transportation') {
-                Object.assign(payload, {
-                    pickupplace: pickupPlace,
-                    dropoffplace: dropoffPlace,
-                    isgoing: isGoing,
-                    isreturn: isReturn,
-                    userleavetime: userLeaveTime,
-                    arrivaltime: arrivalTime,
-                    returntime: returnTime,
-                    car,
-                    driver,
-                });
-            }
-
+            /* ── Date / time formatting depends on request type ── */
             if (selectedType === 'reservation') {
-                Object.assign(payload, {
-                    rooms: room,
-                    maxpeople: Number(maxPeople) || 0,
-                    selectedMembers: accompanyPersons.map((p) => ({ syskey: p.syskey, name: p.name })),
-                });
-            }
-
-            if (selectedType === 'travel') {
-                Object.assign(payload, {
-                    fromplace: fromPlace,
-                    toplace: toPlace,
-                    departuredate: departureDate,
-                    arrivaldate: arrivalDate,
-                    modeoftravel: modeOfTravel ? [modeOfTravel] : [],
-                    vehicleuse: vehicleUse ? [vehicleUse] : [],
-                    product,
-                    project,
-                    estimatedbudget: Number(estimatedBudget) || 0,
-                    selectedAcconpanyPersons: accompanyPersons.map((p) => ({ syskey: p.syskey, name: p.name })),
-                });
-            }
-
-            if (selectedType === 'overtime') {
-                payload.otday = otDay;
+                // Reservation: startdate=yyyyMMdd, enddate='', times in 12h
+                payload.startdate = toApiDate(startDate);
+                payload.enddate = '';
+                payload.starttime = toApi12hTime(startTime);
+                payload.endtime = toApi12hTime(endTime);
+                payload.date = '';
+                payload.selectday = '';
+                payload.otday = '';
+                payload.maxpeople = Number(maxPeople) || 0;
+                payload.rooms = room;
+                // Find room description
+                const selRoom = roomTypes.find((r) => r.syskey === room);
+                payload.roomsdesc = selRoom?.description || '';
+                // Find reservation sub-type description
+                const selResType = reservationTypes.find((r) => r.syskey === subType);
+                payload.requestsubtypedesc = selResType?.description || '';
+                // Reservation auto-approved (status 2)
+                payload.requeststatus = 2;
+                // Meeting participants
+                if (accompanyPersons.length > 0) {
+                    payload.selectedMembers = accompanyPersons.map((p) => ({
+                        syskey: p.syskey,
+                        name: p.name,
+                        userid: '',
+                        profilestatus: 0,
+                        profile: '',
+                        eid: p.employeeid || '',
+                        signedURL: '',
+                        status: '4',
+                        pickupplace: '',
+                        dropoffplace: '',
+                        leaveDateRange: '',
+                        timeintime: '',
+                        timeouttime: '',
+                        attendancevalidation: true,
+                        timeinoffset: '',
+                        timeoutoffset: '',
+                    }));
+                }
+            } else if (selectedType === 'leave' || selectedType === 'wfh') {
+                payload.startdate = toApiDate(startDate);
+                payload.enddate = toApiDate(endDate || startDate);
+                payload.date = '';
+                payload.selectday = '';
+                payload.otday = '';
+                payload.requeststatus = 1;
+                if (selectedType === 'leave') {
+                    // Leave uses AM/PM for time, not full HH:mm
+                    payload.starttime = startPeriod;
+                    payload.endtime = endPeriod;
+                    payload.duration = duration;
+                    // Set requestsubtype to the selected leave type (e.g. Casual Leave)
+                    if (leaveType) {
+                        const selectedLt = leaveTypeList.find((lt) => lt.syskey === leaveType);
+                        if (selectedLt) {
+                            payload.requestsubtype = selectedLt.syskey;
+                            payload.requestsubtypedesc = selectedLt.description;
+                        }
+                    }
+                    payload.selectedHandovers = handovers.map((h) => ({ syskey: h.syskey, name: h.name }));
+                } else {
+                    payload.starttime = toApi12hTime(startTime);
+                    payload.endtime = toApi12hTime(endTime);
+                }
+                if (selectedType === 'wfh') {
+                    payload.locationname = locationName;
+                }
+            } else if (selectedType === 'transportation') {
+                payload.selectday = toApiDate(startDate);
+                payload.startdate = '';
+                payload.enddate = '';
+                payload.date = '';
+                payload.otday = '';
+                payload.starttime = '';
+                payload.endtime = '';
+                payload.pickupplace = pickupPlace;
+                payload.dropoffplace = dropoffPlace;
+                payload.isgoing = isGoing;
+                payload.isreturn = isReturn;
+                payload.userleavetime = '';
+                payload.arrivaltime = isGoing ? toApi12hTime(arrivalTime) : '';
+                payload.returntime = isReturn ? toApi12hTime(returnTime) : '';
+                payload.car = car;
+                payload.driver = driver;
+                payload.requeststatus = 1;
+            } else if (selectedType === 'travel') {
+                payload.departuredate = toApiDate(departureDate);
+                payload.arrivaldate = toApiDate(arrivalDate);
+                payload.startdate = '';
+                payload.enddate = '';
+                payload.date = '';
+                payload.selectday = '';
+                payload.otday = '';
+                payload.fromPlace = fromPlace;
+                payload.toPlace = toPlace;
+                payload.modeoftravel = modeOfTravel ? [modeOfTravel] : [];
+                payload.vehicleuse = vehicleUse ? [vehicleUse] : [];
+                payload.product = product;
+                payload.project = project;
+                payload.estimatedbudget = Number(unformatAmount(String(estimatedBudget))) || 0;
+                payload.travelpurpose = remark || null;
+                payload.requeststatus = 1;
+                if (accompanyPersons.length > 0) {
+                    payload.selectedAcconpanyPersons = accompanyPersons.map((p) => ({ syskey: p.syskey, name: p.name }));
+                }
+            } else if (selectedType === 'overtime') {
+                payload.startdate = toApiDate(startDate);
+                payload.enddate = toApiDate(endDate || startDate);
+                payload.starttime = toApi12hTime(startTime);
+                payload.endtime = toApi12hTime(endTime);
+                payload.otday = '';
+                payload.date = '';
+                payload.selectday = '';
                 payload.hour = hour;
-            }
-
-            if (selectedType === 'wfh') {
-                payload.locationname = locationName;
-            }
-
-            if (selectedType === 'cashadvance') {
-                payload.amount = Number(amount) || 0;
+                payload.requeststatus = 1;
+            } else if (selectedType === 'cashadvance') {
+                payload.date = toApiDate(startDate);
+                payload.startdate = '';
+                payload.enddate = '';
+                payload.selectday = '';
+                payload.otday = '';
+                payload.amount = Number(unformatAmount(String(amount))) || 0;
                 payload.currencytype = currencyType;
+                payload.requeststatus = 1;
+            } else {
+                // General / Other
+                payload.date = toApiDate(startDate);
+                payload.startdate = '';
+                payload.enddate = '';
+                payload.selectday = '';
+                payload.otday = '';
+                payload.starttime = toApi12hTime(startTime);
+                payload.endtime = toApi12hTime(endTime);
+                payload.requeststatus = 1;
             }
 
             const res = await apiClient.post(SAVE_REQUEST, payload);
@@ -295,9 +507,10 @@ export default function NewRequestPage() {
         },
         onSuccess: () => {
             toast.success(t('request.submitSuccess'));
-            navigate('/requests');
+            navigate(selectedType === 'reservation' ? '/reservations' : selectedType === 'leave' ? '/leave' : '/requests');
         },
-        onError: () => {
+        onError: (err: unknown) => {
+            console.error('Submit error:', err);
             toast.error(t('common.error'));
         },
     });
@@ -315,13 +528,13 @@ export default function NewRequestPage() {
 
     return (
         <div className={styles['new-request']}>
-            <button className={styles['new-request__back']} onClick={() => navigate(presetType === 'reservation' ? '/reservations' : '/requests')}>
+            <button className={styles['new-request__back']} onClick={() => navigate(presetType === 'reservation' ? '/reservations' : presetType === 'leave' ? '/leave' : '/requests')}>
                 <ArrowLeft size={16} />
                 {t('common.back')}
             </button>
 
             <div className="page-header">
-                <h1 className="page-header__title">{presetType === 'reservation' ? 'New Reservation' : t('request.newRequest')}</h1>
+                <h1 className="page-header__title">{presetType === 'reservation' ? 'New Reservation' : presetType === 'leave' ? 'Apply Leave' : t('request.newRequest')}</h1>
                 <p className="page-header__subtitle">
                     {presetType ? 'Fill in the details below' : 'Select a type and fill in the details below'}
                 </p>
@@ -354,8 +567,8 @@ export default function NewRequestPage() {
 
                 {selectedType && (
                     <>
-                        {/* ═════ 2. Sub-type selector (if API has types) ═════ */}
-                        {requestTypes.length > 0 && (
+                        {/* ═════ 2. Sub-type selector (if API has types, hidden for leave — auto-set) ═════ */}
+                        {requestTypes.length > 0 && selectedType !== 'leave' && (
                             <div className={styles['new-request__section']}>
                                 <div className={styles['new-request__grid']}>
                                     <Select
@@ -383,6 +596,36 @@ export default function NewRequestPage() {
                                     <>
                                         <Input id="otDay" label="OT Day" type="date" value={otDay} onChange={(e) => setOtDay(e.target.value)} required />
                                         <Input id="hour" label="Hours" type="number" value={hour} onChange={(e) => setHour(e.target.value)} placeholder="e.g. 2" required />
+                                    </>
+                                ) : selectedType === 'leave' ? (
+                                    <>
+                                        <Input id="startDate" label={t('request.startDate')} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+                                        <Select
+                                            id="startPeriod"
+                                            label={t('request.startTime')}
+                                            value={startPeriod}
+                                            onChange={(e) => setStartPeriod(e.target.value)}
+                                            options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]}
+                                        />
+                                        <Input id="endDate" label={t('request.endDate')} type="date" value={endDate || startDate} onChange={(e) => setEndDate(e.target.value)} />
+                                        <Select
+                                            id="endPeriod"
+                                            label={t('request.endTime')}
+                                            value={endPeriod}
+                                            onChange={(e) => setEndPeriod(e.target.value)}
+                                            options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]}
+                                        />
+                                        <div className={styles['new-request__full']}>
+                                            <Input
+                                                id="duration"
+                                                label={t('request.duration')}
+                                                type="text"
+                                                inputMode="decimal"
+                                                value={duration}
+                                                onChange={(e) => setDuration(e.target.value)}
+                                                placeholder="e.g. 1.5"
+                                            />
+                                        </div>
                                     </>
                                 ) : (
                                     <>
@@ -445,12 +688,29 @@ export default function NewRequestPage() {
                             <div className={styles['new-request__section']}>
                                 <h3 className={styles['new-request__section-title']}>Reservation Details</h3>
                                 <div className={styles['new-request__grid']}>
-                                    {reservationTypes.length > 0 && (
-                                        <Select id="reservationType" label="Reservation Type" value={subType} onChange={(e) => setSubType(e.target.value)} options={reservationTypes.map((r) => ({ value: r.syskey, label: r.description }))} placeholder="Select type…" />
-                                    )}
-                                    {roomTypes.length > 0 && (
-                                        <Select id="room" label="Room" value={room} onChange={(e) => setRoom(e.target.value)} options={roomTypes.map((r) => ({ value: r.syskey, label: r.description }))} placeholder="Select room…" />
-                                    )}
+                                    <Select
+                                        id="reservationType"
+                                        label="Reservation Type"
+                                        value={subType}
+                                        onChange={(e) => setSubType(e.target.value)}
+                                        options={reservationTypes.map((r) => ({ value: r.syskey, label: r.description }))}
+                                        placeholder="Select type…"
+                                    />
+                                    <Select
+                                        id="room"
+                                        label="Rooms"
+                                        value={room}
+                                        onChange={(e) => {
+                                            setRoom(e.target.value);
+                                            // Auto-fill maxPeople from the selected room
+                                            const selected = roomTypes.find((r) => r.syskey === e.target.value);
+                                            if (selected?.maxpeople) {
+                                                setMaxPeople(String(selected.maxpeople));
+                                            }
+                                        }}
+                                        options={roomTypes.map((r) => ({ value: r.syskey, label: r.description }))}
+                                        placeholder="Select room…"
+                                    />
                                     <Input id="maxPeople" label="Max People" type="number" value={maxPeople} onChange={(e) => setMaxPeople(e.target.value)} placeholder="e.g. 10" />
                                 </div>
                                 <div style={{ marginTop: 'var(--space-4)' }}>
@@ -478,10 +738,27 @@ export default function NewRequestPage() {
                                     {projectList.length > 0 && (
                                         <Select id="project" label="Project" value={project} onChange={(e) => setProject(e.target.value)} options={projectList.map((p) => ({ value: p.syskey, label: p.description }))} placeholder="Select…" />
                                     )}
-                                    <Input id="budget" label="Estimated Budget" type="number" value={estimatedBudget} onChange={(e) => setEstimatedBudget(e.target.value)} placeholder="0.00" />
+                                    <Input id="budget" label="Estimated Budget" type="text" inputMode="decimal" value={formatAmount(estimatedBudget)} onChange={(e) => setEstimatedBudget(unformatAmount(e.target.value))} placeholder="0" />
                                 </div>
                                 <div style={{ marginTop: 'var(--space-4)' }}>
                                     <MemberPicker label="Accompanying Persons" members={accompanyPersons} onChange={setAccompanyPersons} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Leave ── */}
+                        {selectedType === 'leave' && (
+                            <div className={styles['new-request__section']}>
+                                <h3 className={styles['new-request__section-title']}>Leave Details</h3>
+                                <div className={styles['new-request__grid']}>
+                                    <Select
+                                        id="leaveType"
+                                        label="Leave Type"
+                                        value={leaveType}
+                                        onChange={(e) => setLeaveType(e.target.value)}
+                                        options={leaveTypeList.map((lt) => ({ value: lt.syskey, label: lt.description }))}
+                                        placeholder="Select leave type…"
+                                    />
                                 </div>
                             </div>
                         )}
@@ -503,7 +780,7 @@ export default function NewRequestPage() {
                             <div className={styles['new-request__section']}>
                                 <h3 className={styles['new-request__section-title']}>Cash Advance</h3>
                                 <div className={styles['new-request__grid']}>
-                                    <Input id="amount" label="Amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
+                                    <Input id="amount" label="Amount" type="text" inputMode="decimal" value={formatAmount(amount)} onChange={(e) => setAmount(unformatAmount(e.target.value))} placeholder="0" required />
                                     <Input id="currency" label="Currency" value={currencyType} onChange={(e) => setCurrencyType(e.target.value)} placeholder="e.g. MMK, USD" />
                                 </div>
                             </div>
@@ -556,7 +833,7 @@ export default function NewRequestPage() {
 
                         {/* ═════ 8. Submit ═════ */}
                         <div className={styles['new-request__footer']}>
-                            <Button type="button" variant="secondary" onClick={() => navigate(presetType === 'reservation' ? '/reservations' : '/requests')}>
+                            <Button type="button" variant="secondary" onClick={() => navigate(presetType === 'reservation' ? '/reservations' : presetType === 'leave' ? '/leave' : '/requests')}>
                                 {t('common.cancel')}
                             </Button>
                             <Button type="submit" loading={submitMutation.isPending}>

@@ -37,6 +37,13 @@ apiClient.interceptors.request.use(
             config.data = body;
         }
 
+        // For GET requests, inject userid & domain as query params
+        if (config.method === 'get') {
+            config.params = config.params || {};
+            if (!config.params.userid && userId) config.params.userid = userId;
+            if (!config.params.domain && domain) config.params.domain = domain;
+        }
+
         return config;
     },
     (error) => Promise.reject(error)
