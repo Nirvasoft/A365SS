@@ -1,3 +1,7 @@
+/* ═══════════════════════════════════════════════════════════════
+   ApprovalDetailPage – Premium CSS Module
+   ═══════════════════════════════════════════════════════════════ */
+
 .approval-detail {
     max-width: 720px;
     margin: 0 auto;
@@ -15,12 +19,14 @@
     cursor: pointer;
     background: none;
     border: none;
-    padding: 0;
-    transition: color var(--transition-fast);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
 }
 
 .approval-detail__back:hover {
     color: var(--color-primary-600);
+    background: var(--color-primary-50, rgba(99, 102, 241, 0.06));
 }
 
 .approval-detail__card {
@@ -29,6 +35,23 @@
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+}
+
+/* ── Empty State ── */
+.approval-detail__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-16) var(--space-6);
+    color: var(--color-neutral-300);
+}
+
+.approval-detail__empty h3 {
+    margin-top: var(--space-3);
+    font-size: var(--text-lg);
+    color: var(--color-neutral-500);
 }
 
 /* ── Header ── */
@@ -89,6 +112,8 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: var(--space-3);
+    display: flex;
+    align-items: center;
 }
 
 .approval-detail__grid {
@@ -118,6 +143,17 @@
 .approval-detail__field-value--empty {
     color: var(--color-neutral-400);
     font-style: italic;
+}
+
+/* ── Remarks ── */
+.approval-detail__remark {
+    font-size: var(--text-sm);
+    color: var(--color-neutral-700);
+    line-height: var(--leading-relaxed);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-neutral-50);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--color-neutral-200);
 }
 
 /* ── Requester info ── */
@@ -178,17 +214,44 @@
     flex-wrap: wrap;
 }
 
-.approval-detail__forward-section {
-    margin-top: var(--space-4);
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--color-neutral-100);
+/* ── Forward Panel ── */
+.approval-detail__forward-btn--active {
+    background: var(--color-neutral-200) !important;
+    border-color: var(--color-neutral-300) !important;
 }
 
-.approval-detail__forward-label {
+.approval-detail__forward-section {
+    margin-top: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-neutral-0);
+    border: 1px solid var(--color-primary-200);
+    border-radius: var(--radius-xl);
+    animation: slideDown 0.25s ease-out;
+}
+
+.approval-detail__forward-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--color-neutral-700);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary-700);
     margin-bottom: var(--space-2);
+}
+
+.approval-detail__forward-desc {
+    font-size: var(--text-xs);
+    color: var(--color-neutral-500);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-relaxed);
+}
+
+.approval-detail__forward-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-neutral-100);
 }
 
 /* ── Approver chips ── */
@@ -235,6 +298,32 @@
     margin-bottom: var(--space-3);
 }
 
+/* ── Animations ── */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
     .approval-detail__grid {
         grid-template-columns: 1fr;
@@ -252,5 +341,18 @@
 
     .approval-detail__actions {
         padding: var(--space-4);
+    }
+
+    .approval-detail__action-row {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .approval-detail__action-row>* {
+        width: 100%;
+    }
+
+    .approval-detail__forward-section {
+        padding: var(--space-3) var(--space-4);
     }
 }

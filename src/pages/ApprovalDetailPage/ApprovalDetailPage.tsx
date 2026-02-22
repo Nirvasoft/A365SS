@@ -16,6 +16,9 @@ import {
     CheckCircle,
     XCircle,
     Forward,
+    Send,
+    X,
+    Users,
 } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { Textarea } from '../../components/ui/Input/Input';
@@ -84,15 +87,16 @@ export default function ApprovalDetailPage() {
     const data = detail?.datalist || ({} as Record<string, unknown>);
     const approverList = (data as Record<string, unknown>)?.selectedApprovers as Array<{ syskey: string; name: string }> | undefined;
 
-    // ── Approve / Reject mutation ──
+    // ── Approve / Reject / Forward mutation ──
     const actionMutation = useMutation({
-        mutationFn: async (status: 'approve' | 'reject') => {
+        mutationFn: async (status: 'approve' | 'reject' | 'forward') => {
+            const statusCode = status === 'approve' ? '2' : status === 'reject' ? '3' : '1';
             const payload = {
                 syskey: id,
-                status: status === 'approve' ? '2' : '3',
+                status: statusCode,
                 comment,
                 selectedApprovers:
-                    showForward && forwardApprovers.length > 0
+                    status === 'forward' && forwardApprovers.length > 0
                         ? forwardApprovers.map((a) => ({ syskey: a.syskey, name: a.name }))
                         : [],
             };
@@ -100,7 +104,12 @@ export default function ApprovalDetailPage() {
             return res.data;
         },
         onSuccess: (_data, status) => {
-            toast.success(status === 'approve' ? 'Request approved' : 'Request rejected');
+            const messages = {
+                approve: 'Request approved successfully',
+                reject: 'Request rejected',
+                forward: 'Request forwarded to next approver',
+            };
+            toast.success(messages[status]);
             queryClient.invalidateQueries({ queryKey: ['approvals'] });
             queryClient.invalidateQueries({ queryKey: ['approvalDetail', id] });
             navigate('/approvals');
@@ -108,9 +117,13 @@ export default function ApprovalDetailPage() {
         onError: () => toast.error(t('common.error')),
     });
 
-    const handleAction = (status: 'approve' | 'reject') => {
+    const handleAction = (status: 'approve' | 'reject' | 'forward') => {
         if (status === 'reject' && !comment.trim()) {
             toast.error('Please add a comment before rejecting');
+            return;
+        }
+        if (status === 'forward' && forwardApprovers.length === 0) {
+            toast.error('Please select an approver to forward to');
             return;
         }
         actionMutation.mutate(status);
@@ -138,9 +151,9 @@ export default function ApprovalDetailPage() {
                 <button className={styles['approval-detail__back']} onClick={() => navigate('/approvals')}>
                     <ArrowLeft size={16} /> Back
                 </button>
-                <div className="empty-state">
-                    <FileText size={48} className="empty-state__icon" />
-                    <h3 className="empty-state__title">Approval not found</h3>
+                <div className={styles['approval-detail__empty']}>
+                    <FileText size={48} />
+                    <h3>Approval not found</h3>
                 </div>
             </div>
         );
@@ -268,7 +281,7 @@ export default function ApprovalDetailPage() {
                     {(d.remark || d.comment) && (
                         <div className={styles['approval-detail__section']}>
                             <h4 className={styles['approval-detail__section-title']}>Remarks</h4>
-                            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-neutral-700)', lineHeight: 'var(--leading-relaxed)' }}>
+                            <p className={styles['approval-detail__remark']}>
                                 {String(d.remark || d.comment)}
                             </p>
                         </div>
@@ -277,7 +290,10 @@ export default function ApprovalDetailPage() {
                     {/* Approvers */}
                     {approverList && approverList.length > 0 && (
                         <div className={styles['approval-detail__section']}>
-                            <h4 className={styles['approval-detail__section-title']}>Approval Chain</h4>
+                            <h4 className={styles['approval-detail__section-title']}>
+                                <Users size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                                Approval Chain
+                            </h4>
                             <div className={styles['approval-detail__approver-list']}>
                                 {approverList.map((a) => (
                                     <span key={a.syskey} className={styles['approval-detail__approver-chip']}>
@@ -327,7 +343,7 @@ export default function ApprovalDetailPage() {
                             <Button
                                 variant="success"
                                 onClick={() => handleAction('approve')}
-                                loading={actionMutation.isPending}
+                                loading={actionMutation.isPending && actionMutation.variables === 'approve'}
                             >
                                 <CheckCircle size={16} />
                                 {t('request.approve')}
@@ -336,7 +352,7 @@ export default function ApprovalDetailPage() {
                             <Button
                                 variant="danger"
                                 onClick={() => handleAction('reject')}
-                                loading={actionMutation.isPending}
+                                loading={actionMutation.isPending && actionMutation.variables === 'reject'}
                             >
                                 <XCircle size={16} />
                                 {t('request.reject')}
@@ -345,24 +361,42 @@ export default function ApprovalDetailPage() {
                             <Button
                                 variant="secondary"
                                 onClick={() => setShowForward(!showForward)}
+                                className={showForward ? styles['approval-detail__forward-btn--active'] : ''}
                             >
-                                <Forward size={16} />
-                                Forward
+                                {showForward ? <X size={16} /> : <Forward size={16} />}
+                                {showForward ? 'Cancel' : 'Forward'}
                             </Button>
                         </div>
 
-                        {/* Forward-to-next-approver */}
+                        {/* Forward-to-next-approver Panel */}
                         {showForward && (
                             <div className={styles['approval-detail__forward-section']}>
-                                <div className={styles['approval-detail__forward-label']}>
-                                    Forward to next approver
+                                <div className={styles['approval-detail__forward-header']}>
+                                    <Forward size={16} />
+                                    <span>Forward to Next Approver</span>
                                 </div>
+                                <p className={styles['approval-detail__forward-desc']}>
+                                    Select a person to forward this approval request to. They will become the next approver.
+                                </p>
+
                                 <MemberPicker
                                     label="Next Approver"
                                     members={forwardApprovers}
                                     onChange={setForwardApprovers}
                                     multiple={false}
                                 />
+
+                                <div className={styles['approval-detail__forward-actions']}>
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => handleAction('forward')}
+                                        loading={actionMutation.isPending && actionMutation.variables === 'forward'}
+                                        disabled={forwardApprovers.length === 0}
+                                    >
+                                        <Send size={14} />
+                                        Forward Request
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
