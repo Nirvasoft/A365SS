@@ -17,6 +17,7 @@ import TeamPage from '../pages/TeamPage/TeamPage';
 import TeamDetailView from '../pages/TeamPage/TeamDetailView';
 import MemberDetailView from '../pages/TeamPage/MemberDetailView';
 import HolidaysPage from '../pages/HolidaysPage/HolidaysPage';
+import DashboardPage from '../pages/DashboardPage/DashboardPage';
 
 export const router = createBrowserRouter([
     // ── Guest routes ──
@@ -34,7 +35,8 @@ export const router = createBrowserRouter([
             {
                 element: <AppLayout />,
                 children: [
-                    { index: true, element: <Navigate to="/requests" replace /> },
+                    { index: true, element: <DashboardPage /> },
+                    { path: '/dashboard', element: <DashboardPage /> },
                     { path: '/requests', element: <RequestListPage /> },
                     { path: '/requests/new', element: <NewRequestPage /> },
                     { path: '/requests/:id', element: <RequestDetailPage /> },
@@ -56,5 +58,5 @@ export const router = createBrowserRouter([
     },
 
     // ── Fallback ──
-    { path: '*', element: <Navigate to="/requests" replace /> },
+    { path: '*', element: <Navigate to="/" replace /> },
 ]);

@@ -1,0 +1,533 @@
+/* ═══════════════════════════════════════════════════════════
+   DashboardPage  —  Premium Modern Dashboard
+   ═══════════════════════════════════════════════════════════ */
+
+.page {
+    padding: 0 24px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Hero / Greeting ── */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 32px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5, #7c3aed);
+    color: #fff;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    left: 10%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.heroLeft {
+    position: relative;
+    z-index: 1;
+}
+
+.greeting {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.userName {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 8px;
+}
+
+.dateStr {
+    font-size: 13px;
+    opacity: 0.75;
+    font-weight: 400;
+}
+
+.heroRight {
+    position: relative;
+    z-index: 1;
+    text-align: right;
+}
+
+.liveTime {
+    font-size: 36px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+}
+
+.ampm {
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.8;
+    margin-left: 4px;
+}
+
+/* ── Clock Card Row ── */
+.clockRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.clockCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clockCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+.clockLabel {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+
+.clockValue {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #1e293b;
+}
+
+.clockValue.dimmed {
+    opacity: 0.25;
+}
+
+.clockTag {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.tagIn {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tagOut {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.tagHours {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+/* ── Stat Cards Row ── */
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.statCard::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--stat-color, #2563eb);
+    border-radius: 0 0 16px 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.statCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+.statCard:hover::before {
+    opacity: 1;
+}
+
+.statIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--stat-bg, #eff6ff);
+    color: var(--stat-color, #2563eb);
+}
+
+.statValue {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    text-align: center;
+}
+
+/* ── Section Title ── */
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sectionBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ── Attendance Records ── */
+.recordsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.recordCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recordCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+.recordHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.recordDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.recordDot.green {
+    background: #22c55e;
+}
+
+.recordDot.red {
+    background: #ef4444;
+}
+
+.recordDot.blue {
+    background: #3b82f6;
+}
+
+.recordDot.purple {
+    background: #8b5cf6;
+}
+
+.recordType {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recordTime {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+}
+
+.recordMeta {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.recordStatus {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.recordStatus.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.recordStatus.pending {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.recordStatus.failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ── Quick Actions ── */
+.actionsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+}
+
+.actionCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.actionCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.07);
+    border-color: #c7d2fe;
+}
+
+.actionIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.actionCard:hover .actionIcon {
+    transform: scale(1.08);
+}
+
+.actionLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+}
+
+/* ── Empty record state ── */
+.emptyRecord {
+    color: #cbd5e1;
+    font-size: 14px;
+    text-align: center;
+    padding: 24px;
+    grid-column: 1 / -1;
+}
+
+/* ── Loading skeleton ── */
+.skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 16px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeletonHero {
+    height: 140px;
+    margin-bottom: 24px;
+}
+
+.skeletonClock {
+    height: 110px;
+}
+
+.skeletonStat {
+    height: 120px;
+}
+
+.skeletonRecord {
+    height: 120px;
+}
+
+/* ── Month label in stats (like Flutter) ── */
+.monthLabel {
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    text-align: right;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .page {
+        padding: 0 16px 32px;
+    }
+
+    .hero {
+        padding: 22px 24px;
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .heroRight {
+        text-align: center;
+    }
+
+    .userName {
+        font-size: 20px;
+    }
+
+    .liveTime {
+        font-size: 30px;
+    }
+
+    .statsRow {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .actionsGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .page {
+        padding: 0 12px 24px;
+    }
+
+    .clockRow {
+        grid-template-columns: 1fr;
+    }
+
+    .recordsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .actionsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .statsRow {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

@@ -65,3 +65,5 @@ export const TEAM_EMPLOYEE_RANK = '/api/teams/employee/rank';
 export const USER_PROFILE_BY_ID = 'api/teams/employees/profile';
 export const CALENDAR_VIEW = 'api/checkin/calendarView';
 export const HOLIDAYS = 'api/checkin/holidays';
+export const MONTHLY_SUMMARY = 'api/checkin/monthly-summary';
+export const HOME_DATA = 'api/checkin/home';

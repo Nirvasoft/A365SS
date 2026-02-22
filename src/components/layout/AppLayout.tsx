@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+    LayoutDashboard,
     ClipboardList,
     CheckSquare,
     Calendar,
@@ -19,6 +20,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import styles from './AppLayout.module.css';
 
 const navItems = [
+    { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
     { path: '/requests', icon: ClipboardList, labelKey: 'nav.myRequests' },
     { path: '/approvals', icon: CheckSquare, labelKey: 'nav.approvals' },
     { path: '/reservations', icon: Calendar, labelKey: 'nav.reservations' },
