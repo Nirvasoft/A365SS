@@ -270,17 +270,30 @@ export default function NewRequestPage() {
         enabled: selectedType === 'leave',
     });
 
-    // Reset sub-fields when type changes; auto-default subType for leave
+    // Map UI key → API description for matching requestTypes
+    const TYPE_DESC_MAP: Record<string, string> = {
+        leave: 'Leave',
+        overtime: 'Overtime',
+        wfh: 'Work From Home',
+        transportation: 'Transportation',
+        reservation: 'Reservation',
+        travel: 'Travel',
+        cashadvance: 'Cash Advance',
+        other: 'General',
+    };
+
+    // Reset sub-fields when type changes; auto-default subType for ALL types
     useEffect(() => {
         setSubType('');
         setLeaveType('');
         setStartPeriod('AM');
         setEndPeriod('AM');
-        if (selectedType === 'leave' && requestTypes.length > 0) {
-            const leaveMatch = requestTypes.find(
-                (t) => t.description.trim().toLowerCase() === 'leave'
+        if (selectedType && requestTypes.length > 0) {
+            const typeDesc = TYPE_DESC_MAP[selectedType] || selectedType;
+            const match = requestTypes.find(
+                (t) => t.description.trim().toLowerCase() === typeDesc.toLowerCase()
             );
-            if (leaveMatch) setSubType(leaveMatch.syskey);
+            if (match) setSubType(match.syskey);
         }
     }, [selectedType, requestTypes]);
 
@@ -294,17 +307,7 @@ export default function NewRequestPage() {
     // ── Submit mutation ──
     const submitMutation = useMutation({
         mutationFn: async () => {
-            /* ── Helper: map UI key → API request type syskey + description ── */
-            const TYPE_DESC_MAP: Record<string, string> = {
-                leave: 'Leave',
-                overtime: 'Overtime',
-                wfh: 'Work From Home',
-                transportation: 'Transportation',
-                reservation: 'Reservation',
-                travel: 'Travel',
-                cashadvance: 'Cash Advance',
-                other: 'General',
-            };
+            /* ── Resolve type description from shared map ── */
             const typeDesc = TYPE_DESC_MAP[selectedType] || selectedType;
 
             // Use cached requestTypes; if empty, fetch them now
@@ -507,7 +510,8 @@ export default function NewRequestPage() {
         },
         onSuccess: () => {
             toast.success(t('request.submitSuccess'));
-            navigate(selectedType === 'reservation' ? '/reservations' : selectedType === 'leave' ? '/leave' : '/requests');
+            const SUCCESS_RETURN: Record<string, string> = { leave: '/leave', reservation: '/reservations' };
+            navigate(SUCCESS_RETURN[selectedType] || '/requests');
         },
         onError: (err: unknown) => {
             console.error('Submit error:', err);
@@ -524,17 +528,36 @@ export default function NewRequestPage() {
         submitMutation.mutate();
     };
 
+    /* ── Map preset type → return page ── */
+    const RETURN_PAGE: Record<string, string> = {
+        leave: '/leave',
+        reservation: '/reservations',
+    };
+    const returnPath = RETURN_PAGE[presetType] || '/requests';
+
+    /* ── Map preset type → page title ── */
+    const PAGE_TITLES: Record<string, string> = {
+        leave: 'Apply Leave',
+        overtime: 'New Overtime Request',
+        wfh: 'New Work From Home Request',
+        transportation: 'New Transportation Request',
+        reservation: 'New Reservation',
+        travel: 'New Travel Request',
+        cashadvance: 'New Cash Advance Request',
+        other: 'New Request',
+    };
+
     /* ═══════════════════════════════ Render ═════════════════════════ */
 
     return (
         <div className={styles['new-request']}>
-            <button className={styles['new-request__back']} onClick={() => navigate(presetType === 'reservation' ? '/reservations' : presetType === 'leave' ? '/leave' : '/requests')}>
+            <button className={styles['new-request__back']} onClick={() => navigate(returnPath)}>
                 <ArrowLeft size={16} />
                 {t('common.back')}
             </button>
 
             <div className="page-header">
-                <h1 className="page-header__title">{presetType === 'reservation' ? 'New Reservation' : presetType === 'leave' ? 'Apply Leave' : t('request.newRequest')}</h1>
+                <h1 className="page-header__title">{presetType ? PAGE_TITLES[presetType] || t('request.newRequest') : t('request.newRequest')}</h1>
                 <p className="page-header__subtitle">
                     {presetType ? 'Fill in the details below' : 'Select a type and fill in the details below'}
                 </p>

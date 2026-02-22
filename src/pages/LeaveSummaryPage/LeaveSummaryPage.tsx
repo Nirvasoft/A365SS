@@ -1,47 +1,79 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Palmtree, Stethoscope, Baby, HeartPulse, GraduationCap, Briefcase } from 'lucide-react';
+import { Palmtree, Stethoscope, Baby, HeartPulse, GraduationCap, Briefcase, CalendarDays } from 'lucide-react';
 import { StatusBadge } from '../../components/ui/Badge/Badge';
-import type { LeaveType, RequestModel } from '../../types/models';
+import type { RequestModel } from '../../types/models';
 import apiClient from '../../lib/api-client';
-import { LEAVE_TYPES, LEAVE_LIST } from '../../config/api-routes';
+import { LEAVE_SUMMARY, LEAVE_LIST } from '../../config/api-routes';
+import { displayDate } from '../../lib/date-utils';
 import styles from './LeaveSummaryPage.module.css';
 import '../../styles/pages.css';
 
-/* ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   Card colours — cycled per leave type
+   ══════════════════════════════════════════════════════════════ */
 
 const CARD_COLORS = [
-    { accent: '#16a34a', bg: '#f0fdf4', fill: '#16a34a', Icon: Palmtree },
-    { accent: '#2563eb', bg: '#eff6ff', fill: '#2563eb', Icon: Stethoscope },
-    { accent: '#d97706', bg: '#fef3c7', fill: '#d97706', Icon: Baby },
-    { accent: '#9333ea', bg: '#faf5ff', fill: '#9333ea', Icon: HeartPulse },
-    { accent: '#0891b2', bg: '#ecfeff', fill: '#0891b2', Icon: GraduationCap },
-    { accent: '#ea580c', bg: '#fff7ed', fill: '#ea580c', Icon: Briefcase },
+    { accent: '#16a34a', bg: '#f0fdf4', Icon: Palmtree },
+    { accent: '#2563eb', bg: '#eff6ff', Icon: Stethoscope },
+    { accent: '#d97706', bg: '#fef3c7', Icon: Baby },
+    { accent: '#9333ea', bg: '#faf5ff', Icon: HeartPulse },
+    { accent: '#0891b2', bg: '#ecfeff', Icon: GraduationCap },
+    { accent: '#ea580c', bg: '#fff7ed', Icon: Briefcase },
 ];
 
 function getCardStyle(index: number) {
     return CARD_COLORS[index % CARD_COLORS.length];
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Leave balance item — shape from GET hxm/leave/totalleavetaken
+   ══════════════════════════════════════════════════════════════ */
+interface LeaveBalanceItem {
+    leavetype: string;
+    usedleave: string | number;
+    balancedleave: string | number;
+}
+
 /* ══════════════════════════════════════════════════════════════ */
+
+function toApiDate(d: Date): string {
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export default function LeaveSummaryPage() {
     const { t } = useTranslation();
 
-    // ── Leave balance types ──
-    const { data: leaveTypes = [], isLoading: loadingTypes } = useQuery<LeaveType[]>({
-        queryKey: ['leaveTypes'],
+    /* ── Leave balance summary (GET — returns totalcount + datalist) ── */
+    const { data: summaryData, isLoading: loadingSummary } = useQuery<{
+        totalcount: string;
+        datalist: LeaveBalanceItem[];
+    }>({
+        queryKey: ['leaveSummary'],
         queryFn: async () => {
-            const res = await apiClient.post(LEAVE_TYPES, {});
-            return res.data?.datalist || [];
+            const res = await apiClient.get(LEAVE_SUMMARY);
+            return {
+                totalcount: res.data?.totalcount ?? '0',
+                datalist: res.data?.datalist || [],
+            };
         },
     });
 
-    // ── Leave history ──
+    const totalLeaveTaken = summaryData?.totalcount ?? '0';
+    const leaveBalances = summaryData?.datalist ?? [];
+
+    /* ── Leave history (POST — last 12 months) ── */
     const { data: leaveHistory = [], isLoading: loadingHistory } = useQuery<RequestModel[]>({
-        queryKey: ['leaveHistory'],
+        queryKey: ['leaveHistorySummary'],
         queryFn: async () => {
-            const res = await apiClient.post(LEAVE_LIST, {});
+            const now = new Date();
+            const from = new Date(now.getFullYear(), 0, 1); // Jan 1
+            const to = new Date(now.getFullYear(), 11, 31); // Dec 31
+            const res = await apiClient.post(LEAVE_LIST, {
+                fromdate: toApiDate(from),
+                todate: toApiDate(to),
+                status: '4', // all statuses
+            });
             return res.data?.datalist || [];
         },
     });
@@ -62,67 +94,84 @@ export default function LeaveSummaryPage() {
                 </div>
             </div>
 
-            {/* ── Balance cards ── */}
-            {loadingTypes ? (
+            {/* ── Total stat + balance cards ── */}
+            {loadingSummary ? (
                 <div className={styles['leave-skeleton']}>
                     {[1, 2, 3].map((i) => (
                         <div key={i} className={styles['leave-skeleton__card']} />
                     ))}
                 </div>
-            ) : leaveTypes.length === 0 ? (
+            ) : leaveBalances.length === 0 ? (
                 <div className="empty-state">
                     <Palmtree size={64} className="empty-state__icon" />
                     <h3 className="empty-state__title">No Leave Types</h3>
                     <p className="empty-state__desc">Leave balance information is not available yet.</p>
                 </div>
             ) : (
-                <div className={styles['leave-cards']}>
-                    {leaveTypes.map((lt, i) => {
-                        const style = getCardStyle(i);
-                        const total = (lt.used || 0) + (lt.remaining || 0);
-                        const usedPct = total > 0 ? ((lt.used || 0) / total) * 100 : 0;
+                <>
+                    {/* Total leave taken stat */}
+                    <div className={styles['total-stat']}>
+                        <div className={styles['total-stat__icon']}>
+                            <CalendarDays size={24} />
+                        </div>
+                        <div>
+                            <div className={styles['total-stat__label']}>Total Leave Taken</div>
+                            <div className={styles['total-stat__value']}>{totalLeaveTaken} <span className={styles['total-stat__unit']}>days</span></div>
+                        </div>
+                    </div>
 
-                        return (
-                            <div key={lt.syskey} className={styles['leave-card']}>
-                                <div className={styles['leave-card__accent']} style={{ background: style.accent }} />
-                                <div className={styles['leave-card__header']}>
-                                    <div className={styles['leave-card__icon']} style={{ background: style.bg, color: style.accent }}>
-                                        <style.Icon size={20} />
-                                    </div>
-                                    <span className={styles['leave-card__name']}>{lt.description}</span>
-                                </div>
+                    {/* Balance cards */}
+                    <div className={styles['leave-cards']}>
+                        {leaveBalances.map((item, i) => {
+                            const style = getCardStyle(i);
+                            const used = Number(item.usedleave) || 0;
+                            const balance = Number(item.balancedleave) || 0;
+                            const remaining = balance - used;
+                            const usedPct = balance > 0 ? (used / balance) * 100 : 0;
 
-                                <div className={styles['leave-card__progress']}>
-                                    <div
-                                        className={styles['leave-card__progress-fill']}
-                                        style={{ width: `${Math.min(usedPct, 100)}%`, background: style.fill }}
-                                    />
-                                </div>
+                            return (
+                                <div key={i} className={styles['leave-card']}>
+                                    <div className={styles['leave-card__accent']} style={{ background: style.accent }} />
+                                    <div className={styles['leave-card__header']}>
+                                        <div className={styles['leave-card__icon']} style={{ background: style.bg, color: style.accent }}>
+                                            <style.Icon size={20} />
+                                        </div>
+                                        <span className={styles['leave-card__name']}>{item.leavetype}</span>
+                                    </div>
 
-                                <div className={styles['leave-card__stats']}>
-                                    <div className={styles['leave-card__stat']}>
-                                        <span className={styles['leave-card__stat-value']}>{lt.balance ?? total}</span>
-                                        <span className={styles['leave-card__stat-label']}>{t('leave.balance')}</span>
+                                    <div className={styles['leave-card__progress']}>
+                                        <div
+                                            className={styles['leave-card__progress-fill']}
+                                            style={{ width: `${Math.min(usedPct, 100)}%`, background: style.accent }}
+                                        />
                                     </div>
-                                    <div className={styles['leave-card__stat']}>
-                                        <span className={styles['leave-card__stat-value']}>{lt.used ?? 0}</span>
-                                        <span className={styles['leave-card__stat-label']}>{t('leave.used')}</span>
-                                    </div>
-                                    <div className={styles['leave-card__stat']}>
-                                        <span className={styles['leave-card__stat-value']}>{lt.remaining ?? 0}</span>
-                                        <span className={styles['leave-card__stat-label']}>{t('leave.remaining')}</span>
+
+                                    <div className={styles['leave-card__stats']}>
+                                        <div className={styles['leave-card__stat']}>
+                                            <span className={styles['leave-card__stat-value']}>{balance}</span>
+                                            <span className={styles['leave-card__stat-label']}>{t('leave.balance')}</span>
+                                        </div>
+                                        <div className={styles['leave-card__stat']}>
+                                            <span className={styles['leave-card__stat-value']}>{used}</span>
+                                            <span className={styles['leave-card__stat-label']}>{t('leave.used')}</span>
+                                        </div>
+                                        <div className={styles['leave-card__stat']}>
+                                            <span className={styles['leave-card__stat-value']}>{remaining >= 0 ? remaining : 0}</span>
+                                            <span className={styles['leave-card__stat-label']}>{t('leave.remaining')}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                </>
             )}
 
-            {/* ── Leave history ── */}
+            {/* ── Leave history table ── */}
             <div className={styles['leave-history']}>
                 <div className={styles['leave-history__header']}>
                     <h3 className={styles['leave-history__title']}>Leave History</h3>
+                    <span className={styles['leave-history__year']}>{new Date().getFullYear()}</span>
                 </div>
 
                 {loadingHistory ? (
@@ -136,28 +185,30 @@ export default function LeaveSummaryPage() {
                         <p className="empty-state__desc">Your leave history will appear here.</p>
                     </div>
                 ) : (
-                    leaveHistory.map((req, i) => {
-                        const dotColor =
-                            req.requeststatus === '2' ? 'var(--color-success-400)' :
-                                req.requeststatus === '3' ? 'var(--color-danger-400)' :
-                                    'var(--color-warning-400)';
-
-                        return (
-                            <div key={req.syskey || i} className={styles['leave-history__item']}>
-                                <div className={styles['leave-history__item-dot']} style={{ background: dotColor }} />
-                                <div className={styles['leave-history__item-body']}>
-                                    <div className={styles['leave-history__item-type']}>{req.requesttypedesc || req.requesttype}</div>
-                                    <div className={styles['leave-history__item-dates']}>
-                                        {req.startdate || req.date}
-                                        {req.enddate ? ` → ${req.enddate}` : ''}
-                                    </div>
-                                </div>
-                                <div className={styles['leave-history__item-right']}>
-                                    <StatusBadge status={req.requeststatus} />
-                                </div>
-                            </div>
-                        );
-                    })
+                    <table className={styles['leave-table']}>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {leaveHistory.map((req: any, i: number) => (
+                                <tr key={req.syskey || i}>
+                                    <td>
+                                        <span className={styles['leave-table__type']}>
+                                            {req.requestsubtypedesc || req.requesttypedesc || req.requesttype || 'Leave'}
+                                        </span>
+                                    </td>
+                                    <td>{displayDate(req.startdate || req.date)}</td>
+                                    <td>{displayDate(req.enddate || req.startdate || req.date)}</td>
+                                    <td><StatusBadge status={req.requeststatus} /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 )}
             </div>
         </div>
