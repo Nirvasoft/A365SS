@@ -273,3 +273,86 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   datalist?: T;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Team Models — Derived from Flutter team_member.dart, team.dart
+   ═══════════════════════════════════════════════════════════ */
+
+export interface TeamMember {
+  syskey: string;
+  userName: string;
+  employeeId: string;
+  profile: string | null;
+  userid: string;
+  rank: string;
+  department: string;
+  division: string;
+  teamId: string;
+  level: 'senior' | 'user' | 'junior' | '';
+  /** Priority 1-6 = management level */
+  priority: string;
+  /** e.g. "Leader" */
+  role: string | null;
+  /** e.g. "Reporting Officer" */
+  type: string | null;
+  hasJunior: boolean;
+  // Attendance stats
+  workingDays: string;
+  timeInCount: string;
+  timeOutCount: string;
+  activityCount: string;
+  leaveCount: string;
+  requiredWorkDays: string;
+  todayTimeInCount: string;
+  todayTimeOutCount: string;
+  todayIsLeave: string;
+  /** 0 = none, 1 = pending, 2 = approved, 3 = rejected */
+  leaveStatus: number;
+  /** 601 = clocked in, other = clocked out */
+  lastRecordTypeName: number;
+  timeInTime: string;
+  timeOutTime: string;
+  key: string;
+}
+
+export interface Team {
+  teamId: string;
+  teamName: string;
+  syskey: string;
+  teamMembers?: TeamMember[];
+  key: string;
+  role?: string;
+}
+
+export interface TeamPageModel {
+  user: TeamMember | null;
+  seniors: TeamMember[];
+  juniors: TeamMember[];
+  teams: Team[];
+}
+
+export interface AttendanceRecord {
+  syskey: string;
+  date: string;
+  time: string;
+  /** 601 = time-in, 602 = time-out, 603 = activity */
+  type: number;
+  description: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  starttime: string | null;
+  endtime: string | null;
+  checkInType: string;
+  activityType: string;
+  timezone: string;
+  employeeName: string;
+}
+
+export interface LeaveSummaryItem {
+  leaveType: string;
+  totalDays: number;
+  usedDays: number;
+  remainingDays: number;
+  pendingDays: number;
+}

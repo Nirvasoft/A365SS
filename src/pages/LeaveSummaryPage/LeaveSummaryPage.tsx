@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Palmtree, Stethoscope, Baby, HeartPulse, GraduationCap, Briefcase, CalendarDays } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Palmtree, Stethoscope, Baby, HeartPulse, GraduationCap, Briefcase, CalendarDays, ArrowLeft } from 'lucide-react';
 import { StatusBadge } from '../../components/ui/Badge/Badge';
 import type { RequestModel } from '../../types/models';
 import apiClient from '../../lib/api-client';
-import { LEAVE_SUMMARY, LEAVE_LIST } from '../../config/api-routes';
+import mainClient from '../../lib/main-client';
+import { LEAVE_SUMMARY, LEAVE_LIST, TEAM_LEAVE_SUMMARY } from '../../config/api-routes';
 import { displayDate } from '../../lib/date-utils';
 import styles from './LeaveSummaryPage.module.css';
 import '../../styles/pages.css';
@@ -13,9 +15,9 @@ import '../../styles/pages.css';
    Card colours — cycled per leave type
    ══════════════════════════════════════════════════════════════ */
 
-const CARD_COLORS = [
-    { accent: '#16a34a', bg: '#f0fdf4', Icon: Palmtree },
-    { accent: '#2563eb', bg: '#eff6ff', Icon: Stethoscope },
+const CARD_STYLES = [
+    { accent: '#2563eb', bg: '#eff6ff', Icon: Palmtree },
+    { accent: '#059669', bg: '#ecfdf5', Icon: Stethoscope },
     { accent: '#d97706', bg: '#fef3c7', Icon: Baby },
     { accent: '#9333ea', bg: '#faf5ff', Icon: HeartPulse },
     { accent: '#0891b2', bg: '#ecfeff', Icon: GraduationCap },
@@ -23,7 +25,7 @@ const CARD_COLORS = [
 ];
 
 function getCardStyle(index: number) {
-    return CARD_COLORS[index % CARD_COLORS.length];
+    return CARD_STYLES[index % CARD_STYLES.length];
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -43,26 +45,59 @@ function toApiDate(d: Date): string {
 
 export default function LeaveSummaryPage() {
     const { t } = useTranslation();
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    /* ── Leave balance summary (GET — returns totalcount + datalist) ── */
+    /* ── Detect if viewing a team member's leave (passed via route state) ── */
+    const routeState = (location.state ?? {}) as {
+        employeeSyskey?: string;
+        userId?: string;
+        memberName?: string;
+    };
+    const isTeamMember = !!(routeState.employeeSyskey && routeState.userId);
+    const memberName = routeState.memberName ?? '';
+
+    /* ── Leave balance summary ── */
     const { data: summaryData, isLoading: loadingSummary } = useQuery<{
         totalcount: string;
         datalist: LeaveBalanceItem[];
     }>({
-        queryKey: ['leaveSummary'],
+        queryKey: isTeamMember
+            ? ['teamMemberLeaveSummary', routeState.employeeSyskey, routeState.userId]
+            : ['leaveSummary'],
         queryFn: async () => {
-            const res = await apiClient.get(LEAVE_SUMMARY);
-            return {
-                totalcount: res.data?.totalcount ?? '0',
-                datalist: res.data?.datalist || [],
-            };
+            if (isTeamMember) {
+                // Use team API: api/teams/leaveSummary?employee_syskey=X&user_id=Y
+                const params = new URLSearchParams({
+                    employee_syskey: routeState.employeeSyskey!,
+                    user_id: routeState.userId!,
+                });
+                const res = await mainClient.post(`${TEAM_LEAVE_SUMMARY}?${params.toString()}`);
+                const data = res.data?.data ?? res.data ?? {};
+                // API returns: { totalLeaveCount, leaveSummry: [...] }
+                const totalcount = String(data.totalLeaveCount ?? '0');
+                const rawList = data.leaveSummry ?? data.datalist ?? [];
+                const datalist: LeaveBalanceItem[] = (rawList as Record<string, unknown>[]).map((item) => ({
+                    leavetype: String(item.leavetype ?? '').trim(),
+                    usedleave: String(item.usedleave ?? '0'),
+                    balancedleave: String(item.balancedleave ?? '0'),
+                }));
+                return { totalcount, datalist };
+            } else {
+                // Default: logged-in user's own data
+                const res = await apiClient.get(LEAVE_SUMMARY);
+                return {
+                    totalcount: res.data?.totalcount ?? '0',
+                    datalist: res.data?.datalist || [],
+                };
+            }
         },
     });
 
     const totalLeaveTaken = summaryData?.totalcount ?? '0';
     const leaveBalances = summaryData?.datalist ?? [];
 
-    /* ── Leave history (POST — last 12 months) ── */
+    /* ── Leave history (POST — only for own user, not team member) ── */
     const { data: leaveHistory = [], isLoading: loadingHistory } = useQuery<RequestModel[]>({
         queryKey: ['leaveHistorySummary'],
         queryFn: async () => {
@@ -76,6 +111,7 @@ export default function LeaveSummaryPage() {
             });
             return res.data?.datalist || [];
         },
+        enabled: !isTeamMember, // Only fetch leave history for own user
     });
 
     /* ═══════════════════════════ Render ═══════════════════════ */
@@ -85,11 +121,26 @@ export default function LeaveSummaryPage() {
             {/* ── Header ── */}
             <div className="page-header">
                 <div className="page-header__row">
-                    <div>
-                        <h1 className="page-header__title">{t('leave.summary')}</h1>
-                        <p className="page-header__subtitle">
-                            Track your leave balance and history
-                        </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {isTeamMember && (
+                            <button
+                                className={styles['back-btn']}
+                                onClick={() => navigate(-1)}
+                            >
+                                <ArrowLeft size={18} />
+                            </button>
+                        )}
+                        <div>
+                            <h1 className="page-header__title">
+                                {isTeamMember ? `${memberName}'s Leave` : t('leave.summary')}
+                            </h1>
+                            <p className="page-header__subtitle">
+                                {isTeamMember
+                                    ? `Leave balance for ${memberName}`
+                                    : 'Track your leave balance and history'
+                                }
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -167,50 +218,52 @@ export default function LeaveSummaryPage() {
                 </>
             )}
 
-            {/* ── Leave history table ── */}
-            <div className={styles['leave-history']}>
-                <div className={styles['leave-history__header']}>
-                    <h3 className={styles['leave-history__title']}>Leave History</h3>
-                    <span className={styles['leave-history__year']}>{new Date().getFullYear()}</span>
-                </div>
+            {/* ── Leave history table (only for own user) ── */}
+            {!isTeamMember && (
+                <div className={styles['leave-history']}>
+                    <div className={styles['leave-history__header']}>
+                        <h3 className={styles['leave-history__title']}>Leave History</h3>
+                        <span className={styles['leave-history__year']}>{new Date().getFullYear()}</span>
+                    </div>
 
-                {loadingHistory ? (
-                    <div className="empty-state" style={{ padding: '2rem' }}>
-                        <p className="empty-state__desc">{t('common.loading')}</p>
-                    </div>
-                ) : leaveHistory.length === 0 ? (
-                    <div className="empty-state" style={{ padding: '2rem' }}>
-                        <Palmtree size={40} className="empty-state__icon" />
-                        <h3 className="empty-state__title">No leave records</h3>
-                        <p className="empty-state__desc">Your leave history will appear here.</p>
-                    </div>
-                ) : (
-                    <table className={styles['leave-table']}>
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>From</th>
-                                <th>To</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {leaveHistory.map((req: any, i: number) => (
-                                <tr key={req.syskey || i}>
-                                    <td>
-                                        <span className={styles['leave-table__type']}>
-                                            {req.requestsubtypedesc || req.requesttypedesc || req.requesttype || 'Leave'}
-                                        </span>
-                                    </td>
-                                    <td>{displayDate(req.startdate || req.date)}</td>
-                                    <td>{displayDate(req.enddate || req.startdate || req.date)}</td>
-                                    <td><StatusBadge status={req.requeststatus} /></td>
+                    {loadingHistory ? (
+                        <div className="empty-state" style={{ padding: '2rem' }}>
+                            <p className="empty-state__desc">{t('common.loading')}</p>
+                        </div>
+                    ) : leaveHistory.length === 0 ? (
+                        <div className="empty-state" style={{ padding: '2rem' }}>
+                            <Palmtree size={40} className="empty-state__icon" />
+                            <h3 className="empty-state__title">No leave records</h3>
+                            <p className="empty-state__desc">Your leave history will appear here.</p>
+                        </div>
+                    ) : (
+                        <table className={styles['leave-table']}>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Status</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                            </thead>
+                            <tbody>
+                                {leaveHistory.map((req: any, i: number) => (
+                                    <tr key={req.syskey || i}>
+                                        <td>
+                                            <span className={styles['leave-table__type']}>
+                                                {req.requestsubtypedesc || req.requesttypedesc || req.requesttype || 'Leave'}
+                                            </span>
+                                        </td>
+                                        <td>{displayDate(req.startdate || req.date)}</td>
+                                        <td>{displayDate(req.enddate || req.startdate || req.date)}</td>
+                                        <td><StatusBadge status={req.requeststatus} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

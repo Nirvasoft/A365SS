@@ -55,3 +55,12 @@ export const CLAIM_TYPES = 'hxm/claim/claimtypelist';
 export const CURRENCY_TYPES = 'hxm/setup/getSetupList/currency';
 export const MEMBER_LIST = 'hxm/integration/memberlist';
 export const PHOTO_UPLOAD = 'hxm/integration/photoupload';
+
+// ── Team (uses mainUrl / a365.omnicloudapi.com) ──
+export const TEAM_LIST = 'api/teams';
+export const TEAM_BY_ID = 'api/teams/by-id';
+export const TEAM_MEMBER_ATTENDANCE = 'api/teams/teamMemberAttendance';
+export const TEAM_LEAVE_SUMMARY = 'api/teams/leaveSummary';
+export const TEAM_EMPLOYEE_RANK = '/api/teams/employee/rank';
+export const USER_PROFILE_BY_ID = 'api/teams/employees/profile';
+export const CALENDAR_VIEW = 'api/checkin/calendarView';
