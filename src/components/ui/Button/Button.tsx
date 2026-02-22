@@ -1,4 +1,5 @@
-import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { forwardRef } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import styles from './Button.module.css';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost';

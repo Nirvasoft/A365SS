@@ -4,18 +4,20 @@
 
 export type RequestStatusCode = '1' | '2' | '3' | '4';
 
-export enum RequestStatus {
-  Pending = '1',
-  Approved = '2',
-  Rejected = '3',
-  All = '4',
-}
+export const RequestStatus = {
+  Pending: '1',
+  Approved: '2',
+  Rejected: '3',
+  All: '4',
+} as const;
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus];
 
-export enum RequestType {
-  Reservation = '1',
-  Transportation = '2',
-  All = '4',
-}
+export const RequestType = {
+  Reservation: '1',
+  Transportation: '2',
+  All: '4',
+} as const;
+export type RequestType = (typeof RequestType)[keyof typeof RequestType];
 
 export interface Approver {
   syskey: string;

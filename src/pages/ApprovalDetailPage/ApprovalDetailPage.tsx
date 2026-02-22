@@ -146,7 +146,8 @@ export default function ApprovalDetailPage() {
         );
     }
 
-    const d = data as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const d = data as Record<string, any>;
     const { Icon, bg, color } = getTypeVisual(d);
     const reqName = String(d.name || d.eid || 'Employee');
     const isPending = String(d.requeststatus) === '1';

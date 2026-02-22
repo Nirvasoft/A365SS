@@ -140,10 +140,9 @@ export default function ReservationsPage() {
                 <h1 className={styles['reservations-page__title']}>Reservations</h1>
                 <Button
                     variant="primary"
-                    leftIcon={<Plus size={18} />}
                     onClick={() => navigate('/requests/new?type=reservation')}
                 >
-                    New Reservation
+                    <Plus size={18} /> New Reservation
                 </Button>
             </div>
 
