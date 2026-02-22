@@ -17,7 +17,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const { login, setUser } = useAuthStore();
 
-    const [mode, setMode] = useState<AuthMode>('password');
+    const [mode, setMode] = useState<AuthMode>('otp');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [otp, setOtp] = useState('');
@@ -222,16 +222,16 @@ export default function LoginPage() {
                     {/* Auth Mode Tabs */}
                     <div className={styles.login__tabs}>
                         <button
-                            className={`${styles.login__tab} ${mode === 'password' ? styles['login__tab--active'] : ''}`}
-                            onClick={() => { setMode('password'); setOtpSent(false); setError(''); }}
-                        >
-                            {t('auth.password')}
-                        </button>
-                        <button
                             className={`${styles.login__tab} ${mode === 'otp' ? styles['login__tab--active'] : ''}`}
                             onClick={() => { setMode('otp'); setError(''); }}
                         >
                             {t('auth.otp')}
+                        </button>
+                        <button
+                            className={`${styles.login__tab} ${mode === 'password' ? styles['login__tab--active'] : ''}`}
+                            onClick={() => { setMode('password'); setOtpSent(false); setError(''); }}
+                        >
+                            {t('auth.password')}
                         </button>
                     </div>
 
